@@ -1,20 +1,26 @@
 [package]
-name = "desk0k"
+name = "desktoporz"
 version = "0.1.0"
 edition = "2021"
 description = "Open source DesktopOK clone: save and restore Windows desktop icon layouts"
 license = "MIT"
+
+[[bin]]
+name = "DesktopORZ"
+path = "src/main.rs"
 
 [dependencies]
 windows = { version = "0.58", features = [
     "Win32_UI_WindowsAndMessaging",
     "Win32_UI_Controls",
     "Win32_System_Memory",
+    "Win32_System_Diagnostics_ToolHelp",
     "Win32_System_Threading",
     "Win32_System_Diagnostics_Debug",
     "Win32_Foundation",
     "Win32_Graphics_Gdi",
     "Win32_System_Registry",
+    "Win32_Security",
 ] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

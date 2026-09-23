@@ -3,7 +3,7 @@
 version = 4
 
 [[package]]
-name = "desk0k"
+name = "desktoporz"
 version = "0.1.0"
 dependencies = [
  "serde",

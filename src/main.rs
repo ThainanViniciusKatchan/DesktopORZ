@@ -1,8 +1,10 @@
 mod layout;
+mod process_watcher;
 mod remote_memory;
 mod shell_locator;
 mod startup;
 mod types;
+mod wait_drive;
 
 use std::env;
 use std::fs;
@@ -78,10 +80,110 @@ fn run(args: &[String]) -> Result<String, String> {
             Some("status") | None => startup::status(),
             Some(_) => Err("Uso: desk0k startup [on <perfil> | off | status]".to_string()),
         },
-        _ => Err(format!(
-            "Uso: desk0k <comando>\n  save <perfil>       Salva o layout atual\n  restore <perfil>    Restaura um layout salvo\n  list                Lista perfis salvos\n  startup on <perfil> Inicia com o Windows restaurando o perfil\n  startup off         Desativa a inicialização automática\n  startup status      Mostra se a inicialização automática está ativa"
+        Some("wait-drive") => match args.get(1).map(String::as_str) {
+            Some("on") | Some("true") => {
+                let nome = args
+                    .get(2)
+                    .filter(|n| !n.trim().is_empty())
+                    .ok_or_else(|| {
+                        "Informe o perfil a restaurar: wait-drive on <perfil> [--timeout N]"
+                            .to_string()
+                    })?;
+                validate_profile_name(nome)?;
+                let timeout = timeout_arg(args)?;
+                if profile_path(nome).exists() {
+                    wait_drive::enable(nome, timeout.map(|t| t.as_secs()))
+                } else {
+                    wait_drive::enable(nome, timeout.map(|t| t.as_secs())).map(|msg| {
+                        format!("{msg}\nAviso: o perfil '{nome}' ainda não está salvo; salve antes com 'save {nome}'.")
+                    })
+                }
+            }
+            Some("off") | Some("false") => wait_drive::disable(),
+            Some("status") | None => wait_drive::status(),
+            Some("run") => wait_drive_run(),
+            Some(_) => Err(
+                "Uso: DesktopORZ wait-drive [on <perfil> [--timeout N] | off | status]".to_string(),
+            ),
+        },
+        Some("help") | Some("--help") | Some("-h") | None => Ok(help_text().to_string()),
+        Some(outro) => Err(format!(
+            "Comando desconhecido: '{outro}'.\n\n{}",
+            help_text()
         )),
     }
+}
+
+fn help_text() -> &'static str {
+    "DesktopORZ - gerenciador de layouts de ícones da área de trabalho
+
+USO:
+    DesktopORZ <comando> [argumentos]
+
+COMANDOS:
+
+  save <perfil>
+      Salva o layout atual da área de trabalho como um perfil.
+      Exemplo: DesktopORZ save casa
+
+  restore <perfil>
+      Restaura as posições dos ícones de um perfil salvo.
+      Exemplo: DesktopORZ restore casa
+
+  list
+      Lista todos os perfis salvos.
+
+  startup on <perfil>
+      Inicia o DesktopORZ junto com o Windows, restaurando o perfil no login.
+      Exemplo: DesktopORZ startup on casa
+
+  startup off
+      Desativa a inicialização automática com o Windows.
+
+  startup status
+      Mostra se a inicialização automática está ativa e qual perfil será restaurado.
+
+  wait-drive on <perfil> [--timeout N]    (também: true em vez de on)
+      Ativa a espera pelo Google Drive a cada login do Windows.
+      Assim que o GoogleDriveFS.exe iniciar (mais uma pausa de
+      estabilização de 5 segundos), o perfil é restaurado automaticamente.
+
+      --timeout N   (opcional) desiste após N segundos se o Drive não iniciar.
+                    Sem a flag, aguarda indefinidamente.
+
+      Exemplos:
+        DesktopORZ wait-drive on casa
+        DesktopORZ wait-drive on casa --timeout 120
+
+  wait-drive off    (também: false)
+      Desativa a espera pelo Google Drive no login.
+
+  wait-drive status
+      Mostra se a função está ativada, qual perfil ela restaura
+      e se o timeout está ativado.
+
+  help
+      Mostra esta ajuda."
+}
+
+fn timeout_arg(args: &[String]) -> Result<Option<std::time::Duration>, String> {
+    match args.iter().position(|a| a == "--timeout" || a == "-t") {
+        Some(pos) => {
+            let segundos: u64 = args
+                .get(pos + 1)
+                .and_then(|v| v.parse().ok())
+                .ok_or_else(|| "Informe um número válido após --timeout (segundos).".to_string())?;
+            Ok(Some(std::time::Duration::from_secs(segundos)))
+        }
+        None => Ok(None),
+    }
+}
+
+fn validate_profile_name(name: &str) -> Result<(), String> {
+    if name.chars().any(|c| "\\/:*?\"<>|".contains(c)) {
+        return Err("Nome de perfil contém caracteres inválidos.".to_string());
+    }
+    Ok(())
 }
 
 fn profile_name_arg(args: &[String]) -> Result<String, String> {
@@ -89,10 +191,44 @@ fn profile_name_arg(args: &[String]) -> Result<String, String> {
         .get(1)
         .filter(|n| !n.trim().is_empty())
         .ok_or_else(|| "Informe o nome do perfil.".to_string())?;
-    if name.chars().any(|c| "\\/:*?\"<>|".contains(c)) {
-        return Err("Nome de perfil contém caracteres inválidos.".to_string());
-    }
+    validate_profile_name(name)?;
     Ok(name.clone())
+}
+
+/// Execução interna acionada no login do Windows (chave Run), quando o
+/// aguardar-drive está ativado: espera o Google Drive e restaura o perfil.
+fn wait_drive_run() -> Result<String, String> {
+    let config = wait_drive::load_config();
+    if !config.enabled {
+        return Err("Aguardar Google Drive está desativado.".to_string());
+    }
+    let perfil = config.profile.unwrap();
+    let timeout = config.timeout_secs.map(std::time::Duration::from_secs);
+    println!(
+        "Aguardando o processo '{}' iniciar{}...",
+        process_watcher::GOOGLE_DRIVE_PROCESS,
+        timeout
+            .map(|t| format!(" (timeout: {}s)", t.as_secs()))
+            .unwrap_or_else(|| " (sem timeout)".to_string())
+    );
+    let esperou = process_watcher::wait_for_process(
+        process_watcher::GOOGLE_DRIVE_PROCESS,
+        timeout,
+        std::time::Duration::from_secs(5),
+    )?;
+    println!(
+        "Google Drive detectado após {}s. Restaurando o perfil '{}'...",
+        esperou.as_secs(),
+        perfil
+    );
+    let perfil_dados = load_profile(&perfil)?;
+    let movidos = layout::restore_layout(&perfil_dados).map_err(|e| format!("{e}"))?;
+    Ok(format!(
+        "Perfil '{}' restaurado após o Google Drive iniciar: {} de {} ícones reposicionados.",
+        perfil,
+        movidos,
+        perfil_dados.icons.len()
+    ))
 }
 
 fn profiles_base_dir() -> PathBuf {
