@@ -13,12 +13,16 @@ Para resolver isso, comecei usando o DesktopOK. Porém, por não ser open source
 Para utilizar o projeto você precisa ter o Rust instaldo no computador o qual pode ser instaldo por meio do site``https://rust-lang.org/tools/install/``
 
 1. clonar o repositório:
+
    via GitHub:
-   ``git clone https://github.com/ThainanViniciusKatchan/DesktopORZ.git`` 
-
-        via Codeberg:             ``https://codeberg.org/ThainanViniciusKatchan/DesktopORZ.git``
-
-2. **Acesse a pasta do projeto:**
+   ```
+   git clone https://github.com/ThainanViniciusKatchan/DesktopORZ.git
+    ```
+   via Codeberg:
+   ```
+   https://codeberg.org/ThainanViniciusKatchan/DesktopORZ.git
+    ```
+3. **Acesse a pasta do projeto:**
    
    CMD
    
@@ -26,7 +30,7 @@ Para utilizar o projeto você precisa ter o Rust instaldo no computador o qual p
    cd DesktopORZ
    ```
 
-3. **Compile o projeto:**
+4. **Compile o projeto:**
    
    CMD
    
