@@ -11,7 +11,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use types::DesktopProfile;
+use types::{DesktopProfile, Resolution};
 
 const PROFILES_DIR: &str = "profiles";
 
@@ -33,7 +33,12 @@ fn run(args: &[String]) -> Result<String, String> {
     match args.first().map(String::as_str) {
         Some("save") => {
             let name = profile_name_arg(args)?;
-            let profile = layout::save_layout(&name).map_err(|e| format!("{e}"))?;
+            let current = shell_locator::current_resolution();
+            let mut profile =
+                layout::save_layout(&name, current).map_err(|e| format!("{e}"))?;
+            if let Ok(existing) = load_profile(&name) {
+                profile.resolutions = existing.resolutions;
+            }
             save_profile(&profile)?;
             Ok(format!(
                 "Perfil '{}' salvo com {} ícones ({}x{}).",
@@ -41,6 +46,29 @@ fn run(args: &[String]) -> Result<String, String> {
                 profile.icons.len(),
                 profile.resolution.width,
                 profile.resolution.height
+            ))
+        }
+        Some("save-res") => {
+            let name = profile_name_arg(args)?;
+            let resolution = match args.get(2) {
+                Some(raw) => parse_resolution(raw)?,
+                None => shell_locator::current_resolution(),
+            };
+            let current = layout::save_layout(&name, resolution).map_err(|e| format!("{e}"))?;
+            let key = format!("{}x{}", resolution.width, resolution.height);
+            let count = current.icons.len();
+            let mut profile = match load_profile(&name) {
+                Ok(existing) => existing,
+                Err(_) => current.clone(),
+            };
+            profile.resolutions.insert(key.clone(), current.icons);
+            save_profile(&profile)?;
+            Ok(format!(
+                "Perfil '{}' salvo com {} ícones para a resolução {} (dentro de {}.json).",
+                name,
+                count,
+                key,
+                name
             ))
         }
         Some("restore") => {
@@ -126,8 +154,19 @@ COMANDOS:
       Salva o layout atual da área de trabalho como um perfil.
       Exemplo: DesktopORZ save casa
 
+  save-res <perfil> [LARGURAxALTURA]
+      Salva o layout atual para uma resolução, dentro do mesmo perfil
+      (campo 'resolutions' do arquivo do perfil).
+      Sem a resolução informada, usa a resolução atual da área de trabalho.
+      Exemplos:
+        DesktopORZ save-res casa            (usa a resolução atual)
+        DesktopORZ save-res casa 1920x1080  (marca o perfil para 1920x1080)
+
   restore <perfil>
       Restaura as posições dos ícones de um perfil salvo.
+      Se o perfil tiver um layout salvo para a resolução atual
+      (via save-res), ele é usado automaticamente; caso contrário,
+      usa o layout base do perfil.
       Exemplo: DesktopORZ restore casa
 
   list
@@ -241,6 +280,18 @@ fn profiles_base_dir() -> PathBuf {
 
 fn profile_path(name: &str) -> PathBuf {
     profiles_base_dir().join(format!("{name}.json"))
+}
+
+fn parse_resolution(raw: &str) -> Result<Resolution, String> {
+    let (w, h) = raw.split_once(['x', 'X']).ok_or_else(|| {
+        format!("Resolução inválida: '{raw}'. Use o formato LARGURAxALTURA, ex.: 1920x1080")
+    })?;
+    let width: u32 = w.parse().map_err(|_| format!("Largura inválida em '{raw}'"))?;
+    let height: u32 = h.parse().map_err(|_| format!("Altura inválida em '{raw}'"))?;
+    if width == 0 || height == 0 {
+        return Err("Resolução inválida: largura e altura devem ser maiores que zero".into());
+    }
+    Ok(Resolution { width, height })
 }
 
 fn save_profile(profile: &DesktopProfile) -> Result<(), String> {

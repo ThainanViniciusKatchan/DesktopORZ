@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Resolution {
     pub width: u32,
     pub height: u32,
@@ -19,4 +19,7 @@ pub struct DesktopProfile {
     pub resolution: Resolution,
     pub timestamp_utc: u64,
     pub icons: Vec<IconEntry>,
+    /// Layouts específicos por resolução, indexados por "LARGURAxALTURA".
+    #[serde(default)]
+    pub resolutions: std::collections::HashMap<String, Vec<IconEntry>>,
 }
