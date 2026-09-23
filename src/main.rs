@@ -71,6 +71,26 @@ fn run(args: &[String]) -> Result<String, String> {
                 name
             ))
         }
+        Some("profile-update") => {
+            let name = profile_name_arg(args)?;
+            let mut profile = load_profile(&name)
+                .map_err(|_| format!("Perfil '{name}' não existe. Use 'save {name}' para criá-lo."))?;
+            let current = shell_locator::current_resolution();
+            let captured = layout::save_layout(&name, current).map_err(|e| format!("{e}"))?;
+            profile.resolution = captured.resolution;
+            profile.timestamp_utc = captured.timestamp_utc;
+            profile.icons = captured.icons.clone();
+            let key = format!("{}x{}", current.width, current.height);
+            if profile.resolutions.contains_key(&key) {
+                profile.resolutions.insert(key.clone(), captured.icons);
+            }
+            let count = profile.icons.len();
+            save_profile(&profile)?;
+            Ok(format!(
+                "Perfil '{}' atualizado com {} ícones ({}x{}); layouts por resolução preservados.",
+                name, count, current.width, current.height
+            ))
+        }
         Some("restore") => {
             let name = profile_name_arg(args)?;
             let profile = load_profile(&name)?;
@@ -161,6 +181,13 @@ COMANDOS:
       Exemplos:
         DesktopORZ save-res casa            (usa a resolução atual)
         DesktopORZ save-res casa 1920x1080  (marca o perfil para 1920x1080)
+
+  profile-update <perfil>
+      Atualiza um perfil já existente com o layout atual da área de
+      trabalho, preservando os layouts por resolução salvos (save-res).
+      Se houver um layout salvo para a resolução atual, ele também é
+      atualizado.
+      Exemplo: DesktopORZ profile-update casa
 
   restore <perfil>
       Restaura as posições dos ícones de um perfil salvo.
