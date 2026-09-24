@@ -96,4 +96,4 @@ Para utilizar o projeto você precisa ter o Rust instaldo no computador o qual p
 Projeto Brasileiro 🇧🇷
 
 
-Desenvolvido com o apoio do modelo Kimi-K3.
+Desenvolvido com o apoio do modelo Kimi-K3 e agente Codebuff.
