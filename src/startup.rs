@@ -1,6 +1,8 @@
 use std::env;
 use std::path::PathBuf;
 
+use crate::i18n::{t, t_args};
+
 use windows::core::w;
 use windows::Win32::Foundation::ERROR_FILE_NOT_FOUND;
 use windows::Win32::System::Registry::{
@@ -42,7 +44,10 @@ fn open_run_key(access: REG_SAM_FLAGS) -> Result<HKEY, String> {
         let mut key = HKEY::default();
         let status = RegOpenKeyExW(HKEY_CURRENT_USER, RUN_KEY, 0, access, &mut key);
         if status.is_err() {
-            return Err(format!("Não foi possível abrir a chave Run do registro: {status:?}"));
+            return Err(t_args(
+                "startup.error_open_key",
+                &[("error", &format!("{status:?}"))],
+            ));
         }
         Ok(key)
     }
@@ -65,13 +70,15 @@ pub fn enable(profile: &str) -> Result<String, String> {
         );
         let _ = RegCloseKey(key);
         if status.is_err() {
-            return Err(format!("Falha ao gravar no registro: {status:?}"));
+            return Err(t_args(
+                "startup.error_write",
+                &[("error", &format!("{status:?}"))],
+            ));
         }
     }
-    Ok(format!(
-        "Inicialização automática ATIVADA. Perfil '{}' será restaurado ao iniciar o Windows.\nCaminho registrado: {}",
-        profile,
-        exe.display()
+    Ok(t_args(
+        "startup.enable_success",
+        &[("profile", profile), ("path", &exe.display().to_string())],
     ))
 }
 
@@ -82,12 +89,15 @@ pub fn disable() -> Result<String, String> {
         let _ = RegCloseKey(key);
         if status.is_err() {
             if status == ERROR_FILE_NOT_FOUND {
-                return Ok("Inicialização automática já estava desativada.".to_string());
+                return Ok(t("startup.already_disabled"));
             }
-            return Err(format!("Falha ao remover do registro: {status:?}"));
+            return Err(t_args(
+                "startup.error_remove",
+                &[("error", &format!("{status:?}"))],
+            ));
         }
     }
-    Ok("Inicialização automática DESATIVADA.".to_string())
+    Ok(t("startup.disabled"))
 }
 
 pub fn status() -> Result<String, String> {
@@ -97,18 +107,25 @@ pub fn status() -> Result<String, String> {
         let query = RegQueryValueExW(key, VALUE_NAME, None, None, None, Some(&mut size));
         if query.is_err() {
             let _ = RegCloseKey(key);
-            return Ok("Inicialização automática: DESATIVADA".to_string());
+            return Ok(t("startup.status_disabled"));
         }
         let mut buf = vec![0u8; size as usize];
-        let query = RegQueryValueExW(key, VALUE_NAME, None, None, Some(buf.as_mut_ptr()), Some(&mut size));
+        let query = RegQueryValueExW(
+            key,
+            VALUE_NAME,
+            None,
+            None,
+            Some(buf.as_mut_ptr()),
+            Some(&mut size),
+        );
         let _ = RegCloseKey(key);
         if query.is_err() {
-            return Ok("Inicialização automática: DESATIVADA".to_string());
+            return Ok(t("startup.status_disabled"));
         }
         let wide = std::slice::from_raw_parts(buf.as_ptr() as *const u16, (size as usize) / 2);
-        let text = String::from_utf16_lossy(wide).trim_end_matches('\0').to_string();
-        Ok(format!(
-            "Inicialização automática: ATIVADA\nComando registrado: {text}"
-        ))
+        let text = String::from_utf16_lossy(wide)
+            .trim_end_matches('\0')
+            .to_string();
+        Ok(t_args("startup.status_enabled", &[("command", &text)]))
     }
 }

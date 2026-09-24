@@ -1,9 +1,10 @@
 use std::thread::sleep;
+
+use crate::i18n::t_args;
 use std::time::{Duration, Instant};
 
 use windows::Win32::System::Diagnostics::ToolHelp::{
-    CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W,
-    TH32CS_SNAPPROCESS,
+    CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W, TH32CS_SNAPPROCESS,
 };
 
 /// Nome do executável do Google Drive para desktop.
@@ -67,9 +68,12 @@ pub fn wait_for_process(
         }
         if let Some(limit) = timeout {
             if start.elapsed() >= limit {
-                return Err(format!(
-                    "Tempo esgotado: o processo '{process_name}' não foi iniciado em {}s.",
-                    limit.as_secs()
+                return Err(t_args(
+                    "process_watcher.timeout",
+                    &[
+                        ("process", process_name),
+                        ("seconds", &limit.as_secs().to_string()),
+                    ],
                 ));
             }
         }

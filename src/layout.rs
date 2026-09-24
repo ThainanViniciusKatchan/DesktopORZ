@@ -75,12 +75,7 @@ pub fn restore_layout(profile: &DesktopProfile) -> Result<usize> {
         if let Some(&index) = name_to_index.get(&icon.name) {
             let lparam = ((icon.y as u16 as u32) << 16 | (icon.x as u16 as u32)) as isize;
             unsafe {
-                SendMessageW(
-                    listview,
-                    LVM_SETITEMPOSITION,
-                    WPARAM(index),
-                    LPARAM(lparam),
-                );
+                SendMessageW(listview, LVM_SETITEMPOSITION, WPARAM(index), LPARAM(lparam));
             }
             moved += 1;
         }

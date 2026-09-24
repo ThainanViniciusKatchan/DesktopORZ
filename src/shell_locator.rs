@@ -30,13 +30,23 @@ pub fn find_desktop_listview() -> Result<HWND> {
 
 fn find_listview_under(parent: HWND) -> Option<HWND> {
     unsafe {
-        let def_view = FindWindowExW(parent, HWND::default(), w!("SHELLDLL_DefView"), PCWSTR::null())
-            .ok()?;
+        let def_view = FindWindowExW(
+            parent,
+            HWND::default(),
+            w!("SHELLDLL_DefView"),
+            PCWSTR::null(),
+        )
+        .ok()?;
         if def_view.is_invalid() {
             return None;
         }
-        let listview =
-            FindWindowExW(def_view, HWND::default(), w!("SysListView32"), PCWSTR::null()).ok()?;
+        let listview = FindWindowExW(
+            def_view,
+            HWND::default(),
+            w!("SysListView32"),
+            PCWSTR::null(),
+        )
+        .ok()?;
         if listview.is_invalid() {
             return None;
         }

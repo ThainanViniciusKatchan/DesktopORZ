@@ -1,11 +1,12 @@
 use std::env;
 use std::path::PathBuf;
 
+use crate::i18n::{t, t_args};
+
 use windows::core::w;
 use windows::Win32::System::Registry::{
-    RegCloseKey, RegCreateKeyExW, RegDeleteValueW, RegOpenKeyExW, RegQueryValueExW,
-    REG_CREATE_KEY_DISPOSITION,
-    RegSetValueExW, HKEY, HKEY_CURRENT_USER, KEY_QUERY_VALUE, KEY_SET_VALUE, REG_DWORD,
+    RegCloseKey, RegCreateKeyExW, RegDeleteValueW, RegOpenKeyExW, RegQueryValueExW, RegSetValueExW,
+    HKEY, HKEY_CURRENT_USER, KEY_QUERY_VALUE, KEY_SET_VALUE, REG_CREATE_KEY_DISPOSITION, REG_DWORD,
     REG_OPTION_NON_VOLATILE, REG_SAM_FLAGS, REG_SZ,
 };
 
@@ -45,7 +46,10 @@ fn open_key(
         let mut key = HKEY::default();
         let status = RegOpenKeyExW(root, subkey, 0, access, &mut key);
         if status.is_err() {
-            return Err(format!("Não foi possível abrir a chave do registro: {status:?}"));
+            return Err(t_args(
+                "wait_drive.error_open_key",
+                &[("error", &format!("{status:?}"))],
+            ));
         }
         Ok(key)
     }
@@ -68,8 +72,9 @@ fn open_app_key(access: REG_SAM_FLAGS) -> Result<HKEY, String> {
                 Some(&mut disposition as *mut _),
             );
             if status.is_err() {
-                return Err(format!(
-                    "Não foi possível criar a chave do DesktopORZ no registro: {status:?}"
+                return Err(t_args(
+                    "wait_drive.error_create_key",
+                    &[("error", &format!("{status:?}"))],
                 ));
             }
             return Ok(key);
@@ -93,7 +98,10 @@ fn set_sz(key: HKEY, name: windows::core::PCWSTR, value: &str) -> Result<(), Str
             )),
         );
         if status.is_err() {
-            return Err(format!("Falha ao gravar no registro: {status:?}"));
+            return Err(t_args(
+                "wait_drive.error_write",
+                &[("error", &format!("{status:?}"))],
+            ));
         }
     }
     Ok(())
@@ -112,7 +120,10 @@ fn set_dword(key: HKEY, name: windows::core::PCWSTR, value: u32) -> Result<(), S
             )),
         );
         if status.is_err() {
-            return Err(format!("Falha ao gravar no registro: {status:?}"));
+            return Err(t_args(
+                "wait_drive.error_write",
+                &[("error", &format!("{status:?}"))],
+            ));
         }
     }
     Ok(())
@@ -134,13 +145,22 @@ fn query_sz(key: HKEY, name: windows::core::PCWSTR) -> Option<String> {
             return None;
         }
         let mut buf = vec![0u8; size as usize];
-        if RegQueryValueExW(key, name, None, None, Some(buf.as_mut_ptr()), Some(&mut size))
-            .is_err()
+        if RegQueryValueExW(
+            key,
+            name,
+            None,
+            None,
+            Some(buf.as_mut_ptr()),
+            Some(&mut size),
+        )
+        .is_err()
         {
             return None;
         }
         let wide = std::slice::from_raw_parts(buf.as_ptr() as *const u16, (size as usize) / 2);
-        let text = String::from_utf16_lossy(wide).trim_end_matches('\0').to_string();
+        let text = String::from_utf16_lossy(wide)
+            .trim_end_matches('\0')
+            .to_string();
         if text.is_empty() {
             None
         } else {
@@ -193,13 +213,16 @@ pub fn load_config() -> WaitDriveConfig {
     let mut config = WaitDriveConfig::default();
     if let Ok(key) = open_app_key(KEY_QUERY_VALUE) {
         config.profile = query_sz(key, VALUE_PROFILE);
-        config.timeout_secs = query_dword(key, VALUE_TIMEOUT).and_then(|v| {
-            if v == 0 {
-                None
-            } else {
-                Some(v as u64)
-            }
-        });
+        config.timeout_secs =
+            query_dword(key, VALUE_TIMEOUT).and_then(
+                |v| {
+                    if v == 0 {
+                        None
+                    } else {
+                        Some(v as u64)
+                    }
+                },
+            );
         config.enabled = config.profile.is_some();
         unsafe {
             let _ = RegCloseKey(key);
@@ -210,19 +233,19 @@ pub fn load_config() -> WaitDriveConfig {
 
 pub fn enable(profile: &str, timeout_secs: Option<u64>) -> Result<String, String> {
     let key = open_app_key(KEY_SET_VALUE)?;
-    let result = set_sz(key, VALUE_PROFILE, profile).and_then(|_| {
-        set_dword(key, VALUE_TIMEOUT, timeout_secs.unwrap_or(0) as u32)
-    });
+    let result = set_sz(key, VALUE_PROFILE, profile)
+        .and_then(|_| set_dword(key, VALUE_TIMEOUT, timeout_secs.unwrap_or(0) as u32));
     unsafe {
         let _ = RegCloseKey(key);
     }
     result?;
     register_run_entry()?;
-    Ok(format!(
-        "Aguardar Google Drive: ATIVADO.\nPerfil: {profile}\nTimeout: {}\nO DesktopORZ vai aguardar o Google Drive iniciar a cada login do Windows.",
-        timeout_secs
-            .map(|t| format!("{t}s"))
-            .unwrap_or_else(|| "desativado (sem limite)".to_string())
+    Ok(t_args(
+        "wait_drive.enable_success",
+        &[
+            ("profile", profile),
+            ("timeout", &timeout_text(timeout_secs)),
+        ],
     ))
 }
 
@@ -234,20 +257,29 @@ pub fn disable() -> Result<String, String> {
         let _ = RegCloseKey(key);
     }
     remove_run_entry();
-    Ok("Aguardar Google Drive: DESATIVADO.".to_string())
+    Ok(t("wait_drive.disabled"))
 }
 
 pub fn status() -> Result<String, String> {
     let config = load_config();
     if !config.enabled {
-        return Ok("Aguardar Google Drive: DESATIVADO".to_string());
+        return Ok(t("wait_drive.status_disabled"));
     }
-    Ok(format!(
-        "Aguardar Google Drive: ATIVADO\nPerfil que será restaurado: {}\nTimeout: {}",
-        config.profile.unwrap_or_else(|| "(não definido)".to_string()),
-        config
-            .timeout_secs
-            .map(|t| format!("ativado ({t}s)"))
-            .unwrap_or_else(|| "desativado (sem limite)".to_string())
+    let profile = config
+        .profile
+        .unwrap_or_else(|| t("wait_drive.profile_undefined"));
+    let timeout = config
+        .timeout_secs
+        .map(|s| t_args("wait_drive.timeout_on", &[("seconds", &s.to_string())]))
+        .unwrap_or_else(|| t("wait_drive.timeout_off"));
+    Ok(t_args(
+        "wait_drive.status_enabled",
+        &[("profile", &profile), ("timeout", &timeout)],
     ))
+}
+
+fn timeout_text(timeout_secs: Option<u64>) -> String {
+    timeout_secs
+        .map(|s| format!("{s}s"))
+        .unwrap_or_else(|| t("wait_drive.timeout_off"))
 }
