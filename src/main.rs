@@ -288,13 +288,13 @@ fn wait_drive_run() -> Result<String, String> {
     let timeout = config.timeout_secs.map(std::time::Duration::from_secs);
     println!(
         "Aguardando o processo '{}' iniciar{}...",
-        process_watcher::GOOGLE_DRIVE_PROCESS,
+        process_watcher::GOOGLE_DRIVE_DESCRIPTION,
         timeout
             .map(|t| format!(" (timeout: {}s)", t.as_secs()))
             .unwrap_or_else(|| " (sem timeout)".to_string())
     );
     let esperou = process_watcher::wait_for_process(
-        process_watcher::GOOGLE_DRIVE_PROCESS,
+        process_watcher::GOOGLE_DRIVE_DESCRIPTION,
         timeout,
         std::time::Duration::from_secs(5),
     )?;
