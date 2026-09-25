@@ -1,6 +1,7 @@
 use std::env;
 use std::path::PathBuf;
 
+use crate::config::{self, StartupMirror};
 use crate::i18n::{t, t_args};
 
 use windows::core::w;
@@ -76,6 +77,13 @@ pub fn enable(profile: &str) -> Result<String, String> {
             ));
         }
     }
+    // Espelha a configuração no config.json (o registro continua a fonte real).
+    let command = format!("\"{}\" restore \"{profile}\"", exe.display());
+    config::set_startup(Some(StartupMirror {
+        enabled: true,
+        profile: Some(profile.to_string()),
+        command: Some(command),
+    }));
     Ok(t_args(
         "startup.enable_success",
         &[("profile", profile), ("path", &exe.display().to_string())],
@@ -89,6 +97,11 @@ pub fn disable() -> Result<String, String> {
         let _ = RegCloseKey(key);
         if status.is_err() {
             if status == ERROR_FILE_NOT_FOUND {
+                config::set_startup(Some(StartupMirror {
+                    enabled: false,
+                    profile: None,
+                    command: None,
+                }));
                 return Ok(t("startup.already_disabled"));
             }
             return Err(t_args(
@@ -97,10 +110,24 @@ pub fn disable() -> Result<String, String> {
             ));
         }
     }
+    config::set_startup(Some(StartupMirror {
+        enabled: false,
+        profile: None,
+        command: None,
+    }));
     Ok(t("startup.disabled"))
 }
 
 pub fn status() -> Result<String, String> {
+    // Consulta rápida: lê o espelho no config.json (evita abrir o registro).
+    if let Some(mirror) = config::get_startup() {
+        if !mirror.enabled {
+            return Ok(t("startup.status_disabled"));
+        }
+        let command = mirror.command.unwrap_or_default();
+        return Ok(t_args("startup.status_enabled", &[("command", &command)]));
+    }
+    // Sem espelho: cai no registro e autopopula o config.json.
     unsafe {
         let key = open_run_key(KEY_QUERY_VALUE)?;
         let mut size: u32 = 0;
@@ -126,6 +153,21 @@ pub fn status() -> Result<String, String> {
         let text = String::from_utf16_lossy(wide)
             .trim_end_matches('\0')
             .to_string();
+        let profile = extract_profile(&text);
+        config::set_startup(Some(StartupMirror {
+            enabled: true,
+            profile,
+            command: Some(text.clone()),
+        }));
         Ok(t_args("startup.status_enabled", &[("command", &text)]))
     }
+}
+
+/// Extrai o nome do perfil de `"<exe>" restore "<perfil>"`.
+fn extract_profile(command: &str) -> Option<String> {
+    let marker = " restore \"";
+    let start = command.find(marker)? + marker.len();
+    let rest = &command[start..];
+    let end = rest.find('\"')?;
+    Some(rest[..end].to_string())
 }

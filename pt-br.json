@@ -40,7 +40,7 @@
     "error_remove": "Erro ao remover valor do Registro: {error}",
     "disabled": "Inicialização automática desativada.",
     "status_disabled": "Inicialização automática: desativada.",
-    "status_enabled": "Inicialização automática: ativada. Comando: {command}"
+    "status_enabled": "Inicialização automática: ativada"
   },
   "wait_drive": {
     "missing_profile": "Informe o nome do perfil: wait-drive on <perfil>",
@@ -67,7 +67,7 @@
     "timeout": "Tempo esgotado aguardando o processo '{process}' ({seconds}s)."
   },
   "lang": {
-    "current": "Idioma atual: {lang}",
+    "current": "Idioma atual: {lang}\n \nOutros idiomas: \nIngles Americano: en-us\nRusso: ru\nChines: zh\nEspanhou: es",
     "not_found": "Idioma '{lang}' não encontrado: o arquivo {lang}.json não existe ao lado do executável.",
     "changed": "Idioma alterado para '{lang}'."
   },

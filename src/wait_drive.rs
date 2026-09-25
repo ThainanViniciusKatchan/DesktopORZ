@@ -1,6 +1,7 @@
 use std::env;
 use std::path::PathBuf;
 
+use crate::config::{self, WaitDriveMirror};
 use crate::i18n::{t, t_args};
 
 use windows::core::w;
@@ -210,6 +211,15 @@ fn remove_run_entry() {
 }
 
 pub fn load_config() -> WaitDriveConfig {
+    // Consulta rápida: lê o espelho no config.json (evita abrir o registro).
+    if let Some(mirror) = config::get_wait_drive() {
+        return WaitDriveConfig {
+            enabled: mirror.enabled,
+            profile: mirror.profile,
+            timeout_secs: mirror.timeout_secs,
+        };
+    }
+    // Sem espelho: cai no registro e autopopula o config.json.
     let mut config = WaitDriveConfig::default();
     if let Ok(key) = open_app_key(KEY_QUERY_VALUE) {
         config.profile = query_sz(key, VALUE_PROFILE);
@@ -227,6 +237,12 @@ pub fn load_config() -> WaitDriveConfig {
         unsafe {
             let _ = RegCloseKey(key);
         }
+
+        config::set_wait_drive(Some(WaitDriveMirror {
+            enabled: config.enabled,
+            profile: config.profile.clone(),
+            timeout_secs: config.timeout_secs,
+        }));
     }
     config
 }
@@ -240,6 +256,12 @@ pub fn enable(profile: &str, timeout_secs: Option<u64>) -> Result<String, String
     }
     result?;
     register_run_entry()?;
+    // Espelha a configuração no config.json (o registro continua a fonte real).
+    config::set_wait_drive(Some(WaitDriveMirror {
+        enabled: true,
+        profile: Some(profile.to_string()),
+        timeout_secs,
+    }));
     Ok(t_args(
         "wait_drive.enable_success",
         &[
@@ -257,6 +279,11 @@ pub fn disable() -> Result<String, String> {
         let _ = RegCloseKey(key);
     }
     remove_run_entry();
+    config::set_wait_drive(Some(WaitDriveMirror {
+        enabled: false,
+        profile: None,
+        timeout_secs: None,
+    }));
     Ok(t("wait_drive.disabled"))
 }
 
