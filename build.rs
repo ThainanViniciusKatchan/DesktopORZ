@@ -1,0 +1,24 @@
+use std::env;
+use std::fs;
+use std::path::PathBuf;
+
+fn main() {
+    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+    // OUT_DIR = target/<perfil>/build/<pkg>-<hash>/out -> sobe 3 níveis até target/<perfil>
+    let exe_dir = out_dir
+        .ancestors()
+        .nth(3)
+        .expect("OUT_DIR inesperado")
+        .to_path_buf();
+    let langs_dir = exe_dir.join("langs");
+    fs::create_dir_all(&langs_dir).expect("falha ao criar pasta langs");
+
+    for entry in fs::read_dir("langs").expect("falha ao ler pasta langs") {
+        let path = entry.expect("entrada inválida em langs").path();
+        if path.extension().and_then(|e| e.to_str()) == Some("json") {
+            println!("cargo:rerun-if-changed={}", path.display());
+            let dest = langs_dir.join(path.file_name().unwrap());
+            fs::copy(&path, &dest).unwrap_or_else(|e| panic!("falha ao copiar {}: {e}", path.display()));
+        }
+    }
+}

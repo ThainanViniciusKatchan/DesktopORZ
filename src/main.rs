@@ -1,19 +1,5 @@
-// DesktopORZ — Save and restore Windows desktop icon layouts
-// Copyright (C) 2026 ThainanViniciusKatchan
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program. If not, see <https://www.gnu.org/licenses/>.
-
+mod config;
+mod i18n;
 mod layout;
 mod process_watcher;
 mod remote_memory;
@@ -27,6 +13,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
+use i18n::{t, t_args};
 use types::{DesktopProfile, Resolution};
 
 const PROFILES_DIR: &str = "profiles";
@@ -39,7 +26,7 @@ fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         Err(error) => {
-            eprintln!("Erro: {error}");
+            eprintln!("{}", t_args("errors.generic", &[("error", &error)]));
             ExitCode::FAILURE
         }
     }
@@ -50,18 +37,19 @@ fn run(args: &[String]) -> Result<String, String> {
         Some("save") => {
             let name = profile_name_arg(args)?;
             let current = shell_locator::current_resolution();
-            let mut profile =
-                layout::save_layout(&name, current).map_err(|e| format!("{e}"))?;
+            let mut profile = layout::save_layout(&name, current).map_err(|e| format!("{e}"))?;
             if let Ok(existing) = load_profile(&name) {
                 profile.resolutions = existing.resolutions;
             }
             save_profile(&profile)?;
-            Ok(format!(
-                "Perfil '{}' salvo com {} ícones ({}x{}).",
-                profile.profile_name,
-                profile.icons.len(),
-                profile.resolution.width,
-                profile.resolution.height
+            Ok(t_args(
+                "save.success",
+                &[
+                    ("name", &profile.profile_name),
+                    ("count", &profile.icons.len().to_string()),
+                    ("width", &profile.resolution.width.to_string()),
+                    ("height", &profile.resolution.height.to_string()),
+                ],
             ))
         }
         Some("save-res") => {
@@ -79,18 +67,19 @@ fn run(args: &[String]) -> Result<String, String> {
             };
             profile.resolutions.insert(key.clone(), current.icons);
             save_profile(&profile)?;
-            Ok(format!(
-                "Perfil '{}' salvo com {} ícones para a resolução {} (dentro de {}.json).",
-                name,
-                count,
-                key,
-                name
+            Ok(t_args(
+                "save_res.success",
+                &[
+                    ("name", &name),
+                    ("count", &count.to_string()),
+                    ("resolution", &key),
+                ],
             ))
         }
         Some("profile-update") => {
             let name = profile_name_arg(args)?;
             let mut profile = load_profile(&name)
-                .map_err(|_| format!("Perfil '{name}' não existe. Use 'save {name}' para criá-lo."))?;
+                .map_err(|_| t_args("profile_update.not_found", &[("name", &name)]))?;
             let current = shell_locator::current_resolution();
             let captured = layout::save_layout(&name, current).map_err(|e| format!("{e}"))?;
             profile.resolution = captured.resolution;
@@ -102,150 +91,120 @@ fn run(args: &[String]) -> Result<String, String> {
             }
             let count = profile.icons.len();
             save_profile(&profile)?;
-            Ok(format!(
-                "Perfil '{}' atualizado com {} ícones ({}x{}); layouts por resolução preservados.",
-                name, count, current.width, current.height
+            Ok(t_args(
+                "profile_update.success",
+                &[
+                    ("name", &name),
+                    ("count", &count.to_string()),
+                    ("width", &current.width.to_string()),
+                    ("height", &current.height.to_string()),
+                ],
             ))
         }
         Some("restore") => {
             let name = profile_name_arg(args)?;
             let profile = load_profile(&name)?;
             let moved = layout::restore_layout(&profile).map_err(|e| format!("{e}"))?;
-            Ok(format!(
-                "Perfil '{}' restaurado: {} de {} ícones reposicionados.",
-                name,
-                moved,
-                profile.icons.len()
+            Ok(t_args(
+                "restore.success",
+                &[
+                    ("name", &name),
+                    ("moved", &moved.to_string()),
+                    ("count", &profile.icons.len().to_string()),
+                ],
             ))
         }
         Some("list") => {
             let profiles = list_profiles()?;
             if profiles.is_empty() {
-                Ok("Nenhum perfil salvo.".to_string())
+                Ok(t("list.empty"))
             } else {
-                Ok(format!("Perfis salvos:\n{}", profiles.join("\n")))
+                Ok(t_args("list.some", &[("list", &profiles.join("\n"))]))
             }
         }
+        Some("lang") => run_lang(args),
         Some("startup") => match args.get(1).map(String::as_str) {
             Some("on") => {
                 let name = args
                     .get(2)
                     .filter(|n| !n.trim().is_empty())
-                    .ok_or_else(|| "Informe o perfil a restaurar no login: startup on <perfil>".to_string())?;
+                    .ok_or_else(|| t("startup.missing_profile"))?;
                 if profile_path(name).exists() {
                     startup::enable(name)
                 } else {
                     startup::enable(name).map(|msg| {
-                        format!("{msg}\nAviso: o perfil '{name}' ainda não está salvo; salve antes com 'save {name}'.")
+                        format!(
+                            "{msg}\n{}",
+                            t_args("startup.warn_profile_missing", &[("name", name)])
+                        )
                     })
                 }
             }
             Some("off") => startup::disable(),
             Some("status") | None => startup::status(),
-            Some(_) => Err("Uso: desk0k startup [on <perfil> | off | status]".to_string()),
+            Some(_) => Err(t("startup.usage")),
         },
         Some("wait-drive") => match args.get(1).map(String::as_str) {
             Some("on") | Some("true") => {
                 let nome = args
                     .get(2)
                     .filter(|n| !n.trim().is_empty())
-                    .ok_or_else(|| {
-                        "Informe o perfil a restaurar: wait-drive on <perfil> [--timeout N]"
-                            .to_string()
-                    })?;
+                    .ok_or_else(|| t("wait_drive.missing_profile"))?;
                 validate_profile_name(nome)?;
                 let timeout = timeout_arg(args)?;
                 if profile_path(nome).exists() {
                     wait_drive::enable(nome, timeout.map(|t| t.as_secs()))
                 } else {
                     wait_drive::enable(nome, timeout.map(|t| t.as_secs())).map(|msg| {
-                        format!("{msg}\nAviso: o perfil '{nome}' ainda não está salvo; salve antes com 'save {nome}'.")
+                        format!(
+                            "{msg}\n{}",
+                            t_args("wait_drive.warn_profile_missing", &[("name", nome)])
+                        )
                     })
                 }
             }
             Some("off") | Some("false") => wait_drive::disable(),
             Some("status") | None => wait_drive::status(),
             Some("run") => wait_drive_run(),
-            Some(_) => Err(
-                "Uso: DesktopORZ wait-drive [on <perfil> [--timeout N] | off | status]".to_string(),
-            ),
+            Some(_) => Err(t("wait_drive.usage")),
         },
-        Some("help") | Some("--help") | Some("-h") | None => Ok(help_text().to_string()),
-        Some(outro) => Err(format!(
-            "Comando desconhecido: '{outro}'.\n\n{}",
-            help_text()
+        Some("help") | Some("--help") | Some("-h") | None => Ok(help_text()),
+        Some(outro) => Err(t_args(
+            "errors.unknown_command",
+            &[("command", outro), ("help", &help_text())],
         )),
     }
 }
 
-fn help_text() -> &'static str {
-    "DesktopORZ - gerenciador de layouts de ícones da área de trabalho
+/// Comando `lang [sigla]`: sem argumento mostra o idioma atual; com
+/// argumento valida se `langs/<sigla>.json` existe ao lado do exe e o salva.
+fn run_lang(args: &[String]) -> Result<String, String> {
+    match args
+        .get(1)
+        .map(String::as_str)
+        .filter(|s| !s.trim().is_empty())
+    {
+        None => Ok(t_args("lang.current", &[("lang", &config::get_language())])),
+        Some(sigla) => {
+            let path = exe_dir().join("langs").join(format!("{sigla}.json"));
+            if !path.exists() && i18n::embedded_language(sigla).is_none() {
+                return Err(t_args("lang.not_found", &[("lang", sigla)]));
+            }
+            config::set_language(sigla)?;
+            Ok(t_args("lang.changed", &[("lang", sigla)]))
+        }
+    }
+}
 
-USO:
-    DesktopORZ <comando> [argumentos]
+fn exe_dir() -> PathBuf {
+    env::current_exe()
+        .ok()
+        .and_then(|exe| exe.parent().map(|p| p.to_path_buf()))
+        .unwrap_or_else(|| PathBuf::from("."))
+}
 
-COMANDOS:
-
-  save <perfil>
-      Salva o layout atual da área de trabalho como um perfil.
-      Exemplo: DesktopORZ save casa
-
-  save-res <perfil> [LARGURAxALTURA]
-      Salva o layout atual para uma resolução, dentro do mesmo perfil
-      (campo 'resolutions' do arquivo do perfil).
-      Sem a resolução informada, usa a resolução atual da área de trabalho.
-      Exemplos:
-        DesktopORZ save-res casa            (usa a resolução atual)
-        DesktopORZ save-res casa 1920x1080  (marca o perfil para 1920x1080)
-
-  profile-update <perfil>
-      Atualiza um perfil já existente com o layout atual da área de
-      trabalho, preservando os layouts por resolução salvos (save-res).
-      Se houver um layout salvo para a resolução atual, ele também é
-      atualizado.
-      Exemplo: DesktopORZ profile-update casa
-
-  restore <perfil>
-      Restaura as posições dos ícones de um perfil salvo.
-      Se o perfil tiver um layout salvo para a resolução atual
-      (via save-res), ele é usado automaticamente; caso contrário,
-      usa o layout base do perfil.
-      Exemplo: DesktopORZ restore casa
-
-  list
-      Lista todos os perfis salvos.
-
-  startup on <perfil>
-      Inicia o DesktopORZ junto com o Windows, restaurando o perfil no login.
-      Exemplo: DesktopORZ startup on casa
-
-  startup off
-      Desativa a inicialização automática com o Windows.
-
-  startup status
-      Mostra se a inicialização automática está ativa e qual perfil será restaurado.
-
-  wait-drive on <perfil> [--timeout N]    (também: true em vez de on)
-      Ativa a espera pelo Google Drive a cada login do Windows.
-      Assim que o GoogleDriveFS.exe iniciar (mais uma pausa de
-      estabilização de 5 segundos), o perfil é restaurado automaticamente.
-
-      --timeout N   (opcional) desiste após N segundos se o Drive não iniciar.
-                    Sem a flag, aguarda indefinidamente.
-
-      Exemplos:
-        DesktopORZ wait-drive on casa
-        DesktopORZ wait-drive on casa --timeout 120
-
-  wait-drive off    (também: false)
-      Desativa a espera pelo Google Drive no login.
-
-  wait-drive status
-      Mostra se a função está ativada, qual perfil ela restaura
-      e se o timeout está ativado.
-
-  help
-      Mostra esta ajuda."
+fn help_text() -> String {
+    t("help.text")
 }
 
 fn timeout_arg(args: &[String]) -> Result<Option<std::time::Duration>, String> {
@@ -254,7 +213,7 @@ fn timeout_arg(args: &[String]) -> Result<Option<std::time::Duration>, String> {
             let segundos: u64 = args
                 .get(pos + 1)
                 .and_then(|v| v.parse().ok())
-                .ok_or_else(|| "Informe um número válido após --timeout (segundos).".to_string())?;
+                .ok_or_else(|| t("errors.invalid_timeout"))?;
             Ok(Some(std::time::Duration::from_secs(segundos)))
         }
         None => Ok(None),
@@ -263,7 +222,7 @@ fn timeout_arg(args: &[String]) -> Result<Option<std::time::Duration>, String> {
 
 fn validate_profile_name(name: &str) -> Result<(), String> {
     if name.chars().any(|c| "\\/:*?\"<>|".contains(c)) {
-        return Err("Nome de perfil contém caracteres inválidos.".to_string());
+        return Err(t("errors.profile_name_invalid"));
     }
     Ok(())
 }
@@ -272,7 +231,7 @@ fn profile_name_arg(args: &[String]) -> Result<String, String> {
     let name = args
         .get(1)
         .filter(|n| !n.trim().is_empty())
-        .ok_or_else(|| "Informe o nome do perfil.".to_string())?;
+        .ok_or_else(|| t("errors.profile_name_missing"))?;
     validate_profile_name(name)?;
     Ok(name.clone())
 }
@@ -282,16 +241,27 @@ fn profile_name_arg(args: &[String]) -> Result<String, String> {
 fn wait_drive_run() -> Result<String, String> {
     let config = wait_drive::load_config();
     if !config.enabled {
-        return Err("Aguardar Google Drive está desativado.".to_string());
+        return Err(t("wait_drive.disabled_error"));
     }
     let perfil = config.profile.unwrap();
     let timeout = config.timeout_secs.map(std::time::Duration::from_secs);
     println!(
-        "Aguardando o processo '{}' iniciar{}...",
-        process_watcher::GOOGLE_DRIVE_PROCESS,
-        timeout
-            .map(|t| format!(" (timeout: {}s)", t.as_secs()))
-            .unwrap_or_else(|| " (sem timeout)".to_string())
+        "{}",
+        t_args(
+            "wait_drive.run_waiting",
+            &[
+                ("process", process_watcher::GOOGLE_DRIVE_PROCESS),
+                (
+                    "timeout",
+                    &timeout
+                        .map(|t| t_args(
+                            "wait_drive.run_timeout_suffix",
+                            &[("seconds", &t.as_secs().to_string())]
+                        ))
+                        .unwrap_or_else(|| t("wait_drive.run_no_timeout_suffix")),
+                ),
+            ],
+        )
     );
     let esperou = process_watcher::wait_for_process(
         process_watcher::GOOGLE_DRIVE_PROCESS,
@@ -299,26 +269,29 @@ fn wait_drive_run() -> Result<String, String> {
         std::time::Duration::from_secs(5),
     )?;
     println!(
-        "Google Drive detectado após {}s. Restaurando o perfil '{}'...",
-        esperou.as_secs(),
-        perfil
+        "{}",
+        t_args(
+            "wait_drive.run_detected",
+            &[
+                ("seconds", &esperou.as_secs().to_string()),
+                ("name", &perfil)
+            ],
+        )
     );
     let perfil_dados = load_profile(&perfil)?;
     let movidos = layout::restore_layout(&perfil_dados).map_err(|e| format!("{e}"))?;
-    Ok(format!(
-        "Perfil '{}' restaurado após o Google Drive iniciar: {} de {} ícones reposicionados.",
-        perfil,
-        movidos,
-        perfil_dados.icons.len()
+    Ok(t_args(
+        "wait_drive.run_restored",
+        &[
+            ("name", &perfil),
+            ("moved", &movidos.to_string()),
+            ("count", &perfil_dados.icons.len().to_string()),
+        ],
     ))
 }
 
 fn profiles_base_dir() -> PathBuf {
-    env::current_exe()
-        .ok()
-        .and_then(|exe| exe.parent().map(|p| p.to_path_buf()))
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join(PROFILES_DIR)
+    exe_dir().join(PROFILES_DIR)
 }
 
 fn profile_path(name: &str) -> PathBuf {
@@ -326,13 +299,17 @@ fn profile_path(name: &str) -> PathBuf {
 }
 
 fn parse_resolution(raw: &str) -> Result<Resolution, String> {
-    let (w, h) = raw.split_once(['x', 'X']).ok_or_else(|| {
-        format!("Resolução inválida: '{raw}'. Use o formato LARGURAxALTURA, ex.: 1920x1080")
-    })?;
-    let width: u32 = w.parse().map_err(|_| format!("Largura inválida em '{raw}'"))?;
-    let height: u32 = h.parse().map_err(|_| format!("Altura inválida em '{raw}'"))?;
+    let (w, h) = raw
+        .split_once(['x', 'X'])
+        .ok_or_else(|| t_args("errors.resolution_invalid", &[("raw", raw)]))?;
+    let width: u32 = w
+        .parse()
+        .map_err(|_| t_args("errors.resolution_width_invalid", &[("raw", raw)]))?;
+    let height: u32 = h
+        .parse()
+        .map_err(|_| t_args("errors.resolution_height_invalid", &[("raw", raw)]))?;
     if width == 0 || height == 0 {
-        return Err("Resolução inválida: largura e altura devem ser maiores que zero".into());
+        return Err(t("errors.resolution_zero"));
     }
     Ok(Resolution { width, height })
 }
@@ -345,9 +322,14 @@ fn save_profile(profile: &DesktopProfile) -> Result<(), String> {
 
 fn load_profile(name: &str) -> Result<DesktopProfile, String> {
     let path = profile_path(name);
-    let data = fs::read_to_string(&path)
-        .map_err(|_| format!("Perfil '{name}' não encontrado em {}.", path.display()))?;
-    serde_json::from_str(&data).map_err(|e| format!("Perfil inválido: {e}"))
+    let data = fs::read_to_string(&path).map_err(|_| {
+        t_args(
+            "errors.profile_not_found",
+            &[("name", name), ("path", &path.display().to_string())],
+        )
+    })?;
+    serde_json::from_str(&data)
+        .map_err(|e| t_args("errors.profile_invalid", &[("error", &e.to_string())]))
 }
 
 fn list_profiles() -> Result<Vec<String>, String> {

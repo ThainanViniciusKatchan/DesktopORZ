@@ -1,0 +1,77 @@
+{
+  "errors": {
+    "generic": "错误：{error}",
+    "unknown_command": "未知命令：{command}\n\n{help}",
+    "invalid_timeout": "超时无效。请使用 --timeout <秒数>。",
+    "profile_name_missing": "请提供配置文件名称。",
+    "profile_name_invalid": "配置文件名称无效：请勿使用字符 \\ / : * ? \" < > |",
+    "profile_not_found": "在 {path} 中未找到配置文件 '{name}'",
+    "profile_invalid": "配置文件无效：{error}",
+    "resolution_invalid": "分辨率无效：'{raw}'。请使用 宽x高 格式（例如 1920x1080）。",
+    "resolution_width_invalid": "分辨率 '{raw}' 中的宽度无效。",
+    "resolution_height_invalid": "分辨率 '{raw}' 中的高度无效。",
+    "resolution_zero": "分辨率的宽度或高度不能为零。"
+  },
+  "save": {
+    "success": "配置文件 '{name}' 已保存，共 {count} 个图标（{width}x{height}）。"
+  },
+  "save_res": {
+    "success": "配置文件 '{name}' 已更新：在分辨率 {resolution} 下有 {count} 个图标。"
+  },
+  "profile_update": {
+    "not_found": "未找到配置文件 '{name}'。请使用 'save' 创建。",
+    "success": "配置文件 '{name}' 已更新，共 {count} 个图标（{width}x{height}）。"
+  },
+  "restore": {
+    "success": "配置文件 '{name}' 已恢复：{count} 个图标中已移动 {moved} 个。"
+  },
+  "list": {
+    "empty": "没有已保存的配置文件。",
+    "some": "已保存的配置文件：\n{list}"
+  },
+  "startup": {
+    "missing_profile": "请提供配置文件名称：startup on <配置文件>",
+    "warn_profile_missing": "警告：配置文件 '{name}' 尚不存在；请使用 'save' 创建。",
+    "usage": "用法：startup [on <配置文件> | off | status]",
+    "error_open_key": "打开注册表项时出错：{error}",
+    "error_write": "写入注册表时出错：{error}",
+    "enable_success": "已为配置文件 '{profile}' 启用自动启动。",
+    "already_disabled": "自动启动已被禁用。",
+    "error_remove": "删除注册表值时出错：{error}",
+    "disabled": "自动启动已禁用。",
+    "status_disabled": "自动启动：已禁用。",
+    "status_enabled": "自动启动：已启用"
+  },
+  "wait_drive": {
+    "missing_profile": "请提供配置文件名称：wait-drive on <配置文件>",
+    "warn_profile_missing": "警告：配置文件 '{name}' 尚不存在；请使用 'save' 创建。",
+    "usage": "用法：wait-drive [on <配置文件> [--timeout <秒>] | off | status]",
+    "disabled_error": "Wait-drive 已禁用。",
+    "run_waiting": "正在等待 {process}{timeout}...",
+    "run_timeout_suffix": "（超时 {seconds} 秒）",
+    "run_no_timeout_suffix": "（无超时）",
+    "run_detected": "{seconds} 秒后检测到 Google Drive。正在恢复配置文件 '{name}'...",
+    "run_restored": "配置文件 '{name}' 已恢复：{count} 个图标中已移动 {moved} 个。",
+    "error_open_key": "打开注册表项时出错：{error}",
+    "error_create_key": "创建注册表项时出错：{error}",
+    "error_write": "写入注册表时出错：{error}",
+    "enable_success": "已为配置文件 '{profile}' 启用 Wait-drive（超时：{timeout}）。",
+    "disabled": "Wait-drive 已禁用。",
+    "status_disabled": "Wait-drive：已禁用。",
+    "status_enabled": "Wait-drive：已启用。配置文件：'{profile}'，超时：{timeout}。",
+    "profile_undefined": "（未设置）",
+    "timeout_on": "{seconds} 秒",
+    "timeout_off": "无超时"
+  },
+  "process_watcher": {
+    "timeout": "等待进程 '{process}' 超时（{seconds} 秒）。"
+  },
+  "lang": {
+    "current": "当前语言：{lang}\n \n其他语言：\n巴西葡萄牙语：pt-br\n美式英语：en-us\n俄语：ru\n西班牙语：es",
+    "not_found": "未找到语言 '{lang}'：可执行文件旁边的",
+    "changed": "语言已更改为 '{lang}'。"
+  },
+  "help": {
+    "text": "DesktopORZ — 桌面图标布局管理器\n\n用法：\n  save <配置文件>                    将当前布局保存到配置文件\n  save-res <配置文件> [<宽>x<高>]      为特定分辨率保存布局\n  profile-update <配置文件>          更新配置文件的主布局\n  restore <配置文件>                 恢复配置文件的布局\n  list                              列出已保存的配置文件\n  startup [on <配置文件>|off|status]  管理自动启动\n  wait-drive [on <配置文件> [--timeout <秒>]|off|status]  启动时等待 Google Drive\n  lang [<代码>]                     显示或更改语言（例如 lang zh）\n  help                              显示此帮助"
+  }
+}

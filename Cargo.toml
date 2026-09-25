@@ -3,11 +3,14 @@ name = "desktoporz"
 version = "0.1.0"
 edition = "2021"
 description = "Open source DesktopOK clone: save and restore Windows desktop icon layouts"
-license = "GPL-3.0-or-later"
-repository = "https://github.com/ThainanViniciusKatchan/DesktopORZ"
-keywords = ["desktop", "icons", "layout", "windows"]
-categories = ["os::windows-apis"]
-exclude = [".agents/", ".cargo/", "profiles/", ".freebuff/"]
+license = "MIT"
+include = [
+    "src/**/*",
+    "build.rs",
+    "langs/**/*",
+    "Cargo.toml",
+    "README.md",
+]
 
 [[bin]]
 name = "DesktopORZ"

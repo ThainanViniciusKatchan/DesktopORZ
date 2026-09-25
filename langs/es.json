@@ -1,0 +1,77 @@
+{
+  "errors": {
+    "generic": "Error: {error}",
+    "unknown_command": "Comando desconocido: {command}\n\n{help}",
+    "invalid_timeout": "Tiempo de espera inválido. Use --timeout <segundos>.",
+    "profile_name_missing": "Proporcione el nombre del perfil.",
+    "profile_name_invalid": "Nombre de perfil inválido: no use los caracteres \\ / : * ? \" < > |",
+    "profile_not_found": "Perfil '{name}' no encontrado en {path}",
+    "profile_invalid": "Perfil inválido: {error}",
+    "resolution_invalid": "Resolución inválida: '{raw}'. Use el formato anchoxalto (ej.: 1920x1080).",
+    "resolution_width_invalid": "Ancho inválido en la resolución '{raw}'.",
+    "resolution_height_invalid": "Alto inválido en la resolución '{raw}'.",
+    "resolution_zero": "El ancho o el alto de la resolución no pueden ser cero."
+  },
+  "save": {
+    "success": "Perfil '{name}' guardado con {count} iconos ({width}x{height})."
+  },
+  "save_res": {
+    "success": "Perfil '{name}' actualizado: {count} iconos en la resolución {resolution}."
+  },
+  "profile_update": {
+    "not_found": "Perfil '{name}' no encontrado. Use 'save' para crearlo.",
+    "success": "Perfil '{name}' actualizado con {count} iconos ({width}x{height})."
+  },
+  "restore": {
+    "success": "Perfil '{name}' restaurado: {moved} de {count} iconos movidos."
+  },
+  "list": {
+    "empty": "No hay perfiles guardados.",
+    "some": "Perfiles guardados:\n{list}"
+  },
+  "startup": {
+    "missing_profile": "Proporcione el nombre del perfil: startup on <perfil>",
+    "warn_profile_missing": "Advertencia: el perfil '{name}' aún no existe; use 'save' para crearlo.",
+    "usage": "Uso: startup [on <perfil> | off | status]",
+    "error_open_key": "Error al abrir la clave del registro: {error}",
+    "error_write": "Error al escribir en el registro: {error}",
+    "enable_success": "Inicio automático habilitado para el perfil '{profile}'",
+    "already_disabled": "El inicio automático ya estaba deshabilitado.",
+    "error_remove": "Error al eliminar el valor del registro: {error}",
+    "disabled": "Inicio automático deshabilitado.",
+    "status_disabled": "Inicio automático: deshabilitado.",
+    "status_enabled": "Inicio automático: habilitado"
+  },
+  "wait_drive": {
+    "missing_profile": "Proporcione el nombre del perfil: wait-drive on <perfil>",
+    "warn_profile_missing": "Advertencia: el perfil '{name}' aún no existe; use 'save' para crearlo.",
+    "usage": "Uso: wait-drive [on <perfil> [--timeout <seg>] | off | status]",
+    "disabled_error": "Wait-drive está deshabilitado.",
+    "run_waiting": "Esperando {process}{timeout}...",
+    "run_timeout_suffix": "(tiempo de espera {seconds} s)",
+    "run_no_timeout_suffix": "(sin tiempo de espera)",
+    "run_detected": "Google Drive detectado después de {seconds} s. Restaurando el perfil '{name}'...",
+    "run_restored": "Perfil '{name}' restaurado: {moved} de {count} iconos movidos.",
+    "error_open_key": "Error al abrir la clave del registro: {error}",
+    "error_create_key": "Error al crear la clave del registro: {error}",
+    "error_write": "Error al escribir en el registro: {error}",
+    "enable_success": "Wait-drive habilitado para el perfil '{profile}' (tiempo de espera: {timeout}).",
+    "disabled": "Wait-drive deshabilitado.",
+    "status_disabled": "Wait-drive: deshabilitado.",
+    "status_enabled": "Wait-drive: habilitado. Perfil: '{profile}', tiempo de espera: {timeout}.",
+    "profile_undefined": "(no definido)",
+    "timeout_on": "{seconds} s",
+    "timeout_off": "sin tiempo de espera"
+  },
+  "process_watcher": {
+    "timeout": "Tiempo de espera agotado esperando el proceso '{process}' ({seconds} s)."
+  },
+  "lang": {
+    "current": "Idioma actual: {lang}\n \nOtros idiomas:\nPortugués brasileño: pt-br\nInglés estadounidense: en-us\nRuso: ru\nChino: zh",
+    "not_found": "Idioma '{lang}' no encontrado",
+    "changed": "Idioma cambiado a '{lang}'."
+  },
+  "help": {
+    "text": "DesktopORZ — Gestor de diseño de iconos del escritorio\n\nUso:\n  save <perfil>                     Guarda el diseño actual en un perfil\n  save-res <perfil> [<ancho>x<alto>]  Guarda el diseño para una resolución específica\n  profile-update <perfil>           Actualiza el diseño principal del perfil\n  restore <perfil>                  Restaura el diseño del perfil\n  list                              Lista los perfiles guardados\n  startup [on <perfil>|off|status]  Gestiona el inicio automático\n  wait-drive [on <perfil> [--timeout <seg>]|off|status]  Espera a Google Drive al iniciar\n  lang [<código>]                   Muestra o cambia el idioma (ej.: lang es)\n  help                              Muestra esta ayuda"
+  }
+}
