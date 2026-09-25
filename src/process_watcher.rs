@@ -222,18 +222,12 @@ pub fn wait_for_process(
         }
         if let Some(limit) = timeout {
             if start.elapsed() >= limit {
-<<<<<<< HEAD
                 return Err(t_args(
                     "process_watcher.timeout",
                     &[
-                        ("process", process_name),
+                        ("process", description),
                         ("seconds", &limit.as_secs().to_string()),
                     ],
-=======
-                return Err(format!(
-                    "Tempo esgotado: o processo '{description}' não foi iniciado em {}s.",
-                    limit.as_secs()
->>>>>>> WaitDriveFix
                 ));
             }
         }

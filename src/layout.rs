@@ -15,15 +15,21 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use std::collections::HashMap;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::thread::sleep;
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use windows::core::Result;
 use windows::core::PWSTR;
 use windows::Win32::Foundation::{HWND, LPARAM, POINT, WPARAM};
 use windows::Win32::UI::Controls::{
     LVIF_TEXT, LVITEMW, LVM_GETITEMCOUNT, LVM_GETITEMPOSITION, LVM_GETITEMTEXTW,
-    LVM_SETITEMPOSITION,
 };
+
+/// LVM_SETITEMPOSITION32 — define a posição via POINT* de 32 bits em vez de
+/// coordenadas de 16 bits empacotadas no LPARAM. Necessário para coordenadas
+/// negativas (multi-monitor) ou acima de 32767; com LVM_SETITEMPOSITION o
+/// truncamento corrompe a posição e o ícone fica "solto".
+const LVM_SETITEMPOSITION32: u32 = 0x1000 + 49;
 use windows::Win32::UI::WindowsAndMessaging::SendMessageW;
 
 use crate::remote_memory::{ProcessHandle, RemoteBuffer};
@@ -66,8 +72,16 @@ pub fn save_layout(profile_name: &str, resolution: Resolution) -> Result<Desktop
     })
 }
 
+/// Quantas vezes reaplicamos o layout se o Explorer bagunçar as posições
+/// logo após a restauração (acontece no logon, enquanto o desktop ainda
+/// está inicializando e o Explorer rearranja os ícones por conta própria).
+const RESTORE_ATTEMPTS: usize = 10;
+const RETRY_DELAY: Duration = Duration::from_millis(750);
+const DESKTOP_WAIT_TIMEOUT: Duration = Duration::from_secs(60);
+const DESKTOP_POLL_INTERVAL: Duration = Duration::from_millis(500);
+
 pub fn restore_layout(profile: &DesktopProfile) -> Result<usize> {
-    let listview = shell_locator::find_desktop_listview()?;
+    let listview = wait_for_desktop()?;
     let process = shell_locator::open_explorer_process(listview)?;
 
     let count = unsafe { SendMessageW(listview, LVM_GETITEMCOUNT, None, LPARAM(0)).0 } as usize;
@@ -86,19 +100,68 @@ pub fn restore_layout(profile: &DesktopProfile) -> Result<usize> {
     let res_key = format!("{}x{}", current.width, current.height);
     let icons = profile.resolutions.get(&res_key).unwrap_or(&profile.icons);
 
+    // Aplica e verifica. No logon, o Explorer pode mover os ícones depois da
+    // primeira aplicação; relemos as posições e reaplicamos os divergentes.
     let mut moved = 0usize;
-    for icon in icons {
-        if let Some(&index) = name_to_index.get(&icon.name) {
-            let lparam = ((icon.y as u16 as u32) << 16 | (icon.x as u16 as u32)) as isize;
-            unsafe {
-                SendMessageW(listview, LVM_SETITEMPOSITION, WPARAM(index), LPARAM(lparam));
+    for attempt in 0..RESTORE_ATTEMPTS {
+        if attempt > 0 {
+            sleep(RETRY_DELAY);
+        }
+
+        let mut divergent = 0usize;
+        for icon in icons {
+            if let Some(&index) = name_to_index.get(&icon.name) {
+                if attempt > 0 {
+                    let (_, current_pos) =
+                        read_item(listview, &process, &point_buf, &item_buf, &text_buf, index)?;
+                    if current_pos.x == icon.x && current_pos.y == icon.y {
+                        continue;
+                    }
+                }
+
+                let point = POINT { x: icon.x, y: icon.y };
+                point_buf.write(&point)?;
+                unsafe {
+                    SendMessageW(
+                        listview,
+                        LVM_SETITEMPOSITION32,
+                        WPARAM(index),
+                        LPARAM(point_buf.as_ptr() as isize),
+                    );
+                }
+                divergent += 1;
             }
-            moved += 1;
+        }
+
+        shell_locator::refresh(listview);
+        moved = moved.max(divergent);
+
+        if divergent == 0 {
+            break;
         }
     }
 
-    shell_locator::refresh(listview);
     Ok(moved)
+}
+
+/// Aguarda o desktop (SysListView32) existir e já ter ícones. No logon
+/// automático o Explorer pode ainda não ter criado a janela do desktop.
+fn wait_for_desktop() -> Result<HWND> {
+    let start = Instant::now();
+    loop {
+        if let Ok(listview) = shell_locator::find_desktop_listview() {
+            let count =
+                unsafe { SendMessageW(listview, LVM_GETITEMCOUNT, None, LPARAM(0)).0 } as usize;
+            if count > 0 {
+                return Ok(listview);
+            }
+        }
+        if start.elapsed() >= DESKTOP_WAIT_TIMEOUT {
+            // Deixa o erro original do find_desktop_listview subir.
+            return shell_locator::find_desktop_listview();
+        }
+        sleep(DESKTOP_POLL_INTERVAL);
+    }
 }
 
 fn read_item(

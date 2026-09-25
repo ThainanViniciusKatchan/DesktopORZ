@@ -261,12 +261,11 @@ fn wait_drive_run() -> Result<String, String> {
     let perfil = config.profile.unwrap();
     let timeout = config.timeout_secs.map(std::time::Duration::from_secs);
     println!(
-<<<<<<< HEAD
         "{}",
         t_args(
             "wait_drive.run_waiting",
             &[
-                ("process", process_watcher::GOOGLE_DRIVE_PROCESS),
+                ("process", process_watcher::GOOGLE_DRIVE_DESCRIPTION),
                 (
                     "timeout",
                     &timeout
@@ -278,13 +277,6 @@ fn wait_drive_run() -> Result<String, String> {
                 ),
             ],
         )
-=======
-        "Aguardando o processo '{}' iniciar{}...",
-        process_watcher::GOOGLE_DRIVE_DESCRIPTION,
-        timeout
-            .map(|t| format!(" (timeout: {}s)", t.as_secs()))
-            .unwrap_or_else(|| " (sem timeout)".to_string())
->>>>>>> WaitDriveFix
     );
     let esperou = process_watcher::wait_for_process(
         process_watcher::GOOGLE_DRIVE_DESCRIPTION,
