@@ -1,3 +1,4 @@
 target/
 Cargo.toml.orig
 .freebuff
+.idea
