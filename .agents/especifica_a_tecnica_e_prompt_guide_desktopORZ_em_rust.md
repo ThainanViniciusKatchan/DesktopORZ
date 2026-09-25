@@ -1,4 +1,4 @@
-# Guia de Especificação e Processo de Desenvolvimento: DesktopOK em Rust
+# Guia de Especificação e Processo de Desenvolvimento: DesktopORZ em Rust
 
 > **Público-alvo:** Modelos de Linguagem (LLMs) e Agentes Autônomos de Código.  
 > **Objetivo:** Fornecer contexto técnico rigoroso, restrições e etapas sequenciais para implementação de um clone open source do DesktopOK usando Rust nativo no Windows.
