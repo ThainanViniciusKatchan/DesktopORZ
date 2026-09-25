@@ -8,7 +8,21 @@ Criei esse projeto pois compartilho a área de trabalho do meu notebook com o me
 
 Para resolver isso, comecei usando o DesktopOK. Porém, por não ser open source e não saber quem é o desenvolvedor, decidi criar minha própria versão em Rust, aberta para a comunidade usar e contribuir.
 
-### Como Utilizar:
+____
+
+### Como utilizar:
+1. para tulizar o projeto direto no temrinal basta rodar o comando:
+  ```
+  cargo install desktoporz
+  ```
+
+  Se caso você não tiver o Cargo instaldo, instale ele no seu Windows diretamente pelo site ofícial
+  ```
+  https://rust-lang.org/tools/install/
+  ```
+____
+
+### Como Compilar:
 
 Para utilizar o projeto você precisa ter o Rust instaldo no computador o qual pode ser instaldo por meio do site``https://rust-lang.org/tools/install/``
 
@@ -39,6 +53,8 @@ Para utilizar o projeto você precisa ter o Rust instaldo no computador o qual p
    ```
    
    *(O executável será gerado na pasta `target/release/` ou em ``C:\cargo-target\DesktopORZ\release``)*
+
+____
 
 ## Comandos Principais
 
@@ -74,6 +90,8 @@ Para utilizar o projeto você precisa ter o Rust instaldo no computador o qual p
   
 
 > Nota: No momento esses são os comandos principais via CLI, mas sigo implementando novas melhorias. Futuramente pretendo criar uma versão com interface gráfica (UI), mas não meu foco atual.
+
+____
 
 ### Outros Comandos:
 
