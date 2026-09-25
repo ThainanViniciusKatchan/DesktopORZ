@@ -1,0 +1,77 @@
+{
+  "errors": {
+    "generic": "Ошибка: {error}",
+    "unknown_command": "Неизвестная команда: {command}\n\n{help}",
+    "invalid_timeout": "Недопустимый тайм-аут. Используйте --timeout <секунды>.",
+    "profile_name_missing": "Укажите имя профиля.",
+    "profile_name_invalid": "Недопустимое имя профиля: не используйте символы \\ / : * ? \" < > |",
+    "profile_not_found": "Профиль '{name}' не найден в {path}",
+    "profile_invalid": "Недопустимый профиль: {error}",
+    "resolution_invalid": "Недопустимое разрешение: '{raw}'. Используйте формат ШИРИНАxВЫСОТА (например, 1920x1080).",
+    "resolution_width_invalid": "Недопустимая ширина в разрешении '{raw}'.",
+    "resolution_height_invalid": "Недопустимая высота в разрешении '{raw}'.",
+    "resolution_zero": "Разрешение не может иметь нулевую ширину или высоту."
+  },
+  "save": {
+    "success": "Профиль '{name}' сохранён: {count} значков ({width}x{height})."
+  },
+  "save_res": {
+    "success": "Профиль '{name}' обновлён: {count} значков при разрешении {resolution}."
+  },
+  "profile_update": {
+    "not_found": "Профиль '{name}' не найден. Используйте 'save', чтобы создать его.",
+    "success": "Профиль '{name}' обновлён: {count} значков ({width}x{height})."
+  },
+  "restore": {
+    "success": "Профиль '{name}' восстановлен: перемещено {moved} из {count} значков."
+  },
+  "list": {
+    "empty": "Нет сохранённых профилей.",
+    "some": "Сохранённые профили:\n{list}"
+  },
+  "startup": {
+    "missing_profile": "Укажите имя профиля: startup on <профиль>",
+    "warn_profile_missing": "Предупреждение: профиль '{name}' ещё не существует; создайте его командой 'save'.",
+    "usage": "Использование: startup [on <профиль> | off | status]",
+    "error_open_key": "Ошибка открытия ключа реестра: {error}",
+    "error_write": "Ошибка записи в реестр: {error}",
+    "enable_success": "Автозапуск включён для профиля '{profile}'",
+    "already_disabled": "Автозапуск уже был отключён.",
+    "error_remove": "Ошибка удаления значения реестра: {error}",
+    "disabled": "Автозапуск отключён.",
+    "status_disabled": "Автозапуск: отключён.",
+    "status_enabled": "Автозапуск: включён"
+  },
+  "wait_drive": {
+    "missing_profile": "Укажите имя профиля: wait-drive on <профиль>",
+    "warn_profile_missing": "Предупреждение: профиль '{name}' ещё не существует; создайте его командой 'save'.",
+    "usage": "Использование: wait-drive [on <профиль> [--timeout <секунды>] | off | status]",
+    "disabled_error": "Wait-drive отключён.",
+    "run_waiting": "Ожидание {process}{timeout}...",
+    "run_timeout_suffix": " (тайм-аут {seconds} с)",
+    "run_no_timeout_suffix": " (без тайм-аута)",
+    "run_detected": "Google Drive обнаружен через {seconds} с. Восстановление профиля '{name}'...",
+    "run_restored": "Профиль '{name}' восстановлен: перемещено {moved} из {count} значков.",
+    "error_open_key": "Ошибка открытия ключа реестра: {error}",
+    "error_create_key": "Ошибка создания ключа реестра: {error}",
+    "error_write": "Ошибка записи в реестр: {error}",
+    "enable_success": "Wait-drive включён для профиля '{profile}' (тайм-аут: {timeout}).",
+    "disabled": "Wait-drive отключён.",
+    "status_disabled": "Wait-drive: отключён.",
+    "status_enabled": "Wait-drive: включён. Профиль: '{profile}', тайм-аут: {timeout}.",
+    "profile_undefined": "(не задан)",
+    "timeout_on": "{seconds} с",
+    "timeout_off": "без тайм-аута"
+  },
+  "process_watcher": {
+    "timeout": "Истекло время ожидания процесса '{process}' ({seconds} с)."
+  },
+  "lang": {
+    "current": "Текущий язык: {lang}\n \nДругие языки: \nБразильский португальский: pt-br\nАмериканский английский: en-us\nКитайский: zh\nИспанский: es",
+    "not_found": "Язык '{lang}' не найден",
+    "changed": "Язык изменён на '{lang}'."
+  },
+  "help": {
+    "text": "DesktopORZ — менеджер расположения значков рабочего стола\n\nИспользование:\n  save <профиль>                    Сохраняет текущее расположение в профиль\n  save-res <профиль> [<Ш>x<В>]      Сохраняет расположение для конкретного разрешения\n  profile-update <профиль>          Обновляет основное расположение профиля\n  restore <профиль>                 Восстанавливает расположение профиля\n  list                              Показывает сохранённые профили\n  startup [on <профиль>|off|status]  Управляет автозапуском\n  wait-drive [on <профиль> [--timeout <с>]|off|status]  Ожидает Google Drive при запуске\n  lang [<код>]                      Показывает или меняет язык (например, lang ru)\n  help                              Показывает эту справку"
+  }
+}

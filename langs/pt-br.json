@@ -35,7 +35,7 @@
     "usage": "Uso: startup [on <perfil> | off | status]",
     "error_open_key": "Erro ao abrir a chave do Registro: {error}",
     "error_write": "Erro ao gravar no Registro: {error}",
-    "enable_success": "Inicialização automática ativada para o perfil '{profile}' ({path}).",
+    "enable_success": "Inicialização automática ativada para o perfil '{profile}'",
     "already_disabled": "A inicialização automática já estava desativada.",
     "error_remove": "Erro ao remover valor do Registro: {error}",
     "disabled": "Inicialização automática desativada.",
@@ -67,8 +67,8 @@
     "timeout": "Tempo esgotado aguardando o processo '{process}' ({seconds}s)."
   },
   "lang": {
-    "current": "Idioma atual: {lang}\n \nOutros idiomas: \nIngles Americano: en-us\nRusso: ru\nChines: zh\nEspanhou: es",
-    "not_found": "Idioma '{lang}' não encontrado: o arquivo {lang}.json não existe ao lado do executável.",
+    "current": "Idioma atual: {lang}\n \nOutros idiomas: \nIngles Americano: en-us\nRusso: ru\nChines: zh\nEspanhol: es",
+    "not_found": "Idioma '{lang}' não encontrado",
     "changed": "Idioma alterado para '{lang}'."
   },
   "help": {

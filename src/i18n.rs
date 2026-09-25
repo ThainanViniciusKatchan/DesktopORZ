@@ -22,7 +22,7 @@ fn builtin_fallback() -> HashMap<String, String> {
         ),
         (
             "lang.not_found".to_string(),
-            "Arquivo de idioma '{lang}.json' não encontrado ao lado do executável.".to_string(),
+            "Arquivo de idioma '{lang}.json' não encontrado na pasta 'langs' ao lado do executável.".to_string(),
         ),
     ])
 }
@@ -53,23 +53,49 @@ fn exe_dir() -> Option<std::path::PathBuf> {
         .and_then(|p| p.parent().map(|d| d.to_path_buf()))
 }
 
+/// Idiomas embutidos no binário (funcionam mesmo sem a pasta `langs/`).
+const EMBEDDED: &[(&str, &str)] = &[
+    ("pt-br", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/langs/pt-br.json"))),
+    ("en-us", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/langs/en-us.json"))),
+    ("ru", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/langs/ru.json"))),
+    ("zh", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/langs/zh.json"))),
+    ("es", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/langs/es.json"))),
+];
+
+/// Retorna o JSON embutido da sigla, se existir.
+pub fn embedded_language(sigla: &str) -> Option<&'static str> {
+    EMBEDDED
+        .iter()
+        .find(|(code, _)| code.eq_ignore_ascii_case(sigla))
+        .map(|(_, json)| *json)
+}
+
 fn load_translations() -> HashMap<String, String> {
     let language = config::get_language();
-    let path = match exe_dir() {
-        Some(dir) => dir.join(format!("{language}.json")),
-        None => return builtin_fallback(),
-    };
-    match fs::read_to_string(&path) {
-        Ok(text) => match serde_json::from_str::<serde_json::Value>(&text) {
-            Ok(json) => {
-                let mut map = HashMap::new();
-                flatten(&json, "", &mut map);
-                map
+    // 1) Arquivo ao lado do exe (idiomas extras ou traduções editadas).
+    if let Some(dir) = exe_dir() {
+        let path = dir.join("langs").join(format!("{language}.json"));
+        if let Ok(text) = fs::read_to_string(&path) {
+            if let Some(map) = parse_json(&text) {
+                return map;
             }
-            Err(_) => builtin_fallback(),
-        },
-        Err(_) => builtin_fallback(),
+        }
     }
+    // 2) Idioma embutido no binário (cargo install sem pasta langs/).
+    if let Some(json) = embedded_language(&language) {
+        if let Some(map) = parse_json(json) {
+            return map;
+        }
+    }
+    // 3) Fallback mínimo hardcoded.
+    builtin_fallback()
+}
+
+fn parse_json(text: &str) -> Option<HashMap<String, String>> {
+    let json = serde_json::from_str::<serde_json::Value>(text).ok()?;
+    let mut map = HashMap::new();
+    flatten(&json, "", &mut map);
+    Some(map)
 }
 
 fn translations() -> &'static HashMap<String, String> {

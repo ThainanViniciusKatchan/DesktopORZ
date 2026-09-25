@@ -1,0 +1,77 @@
+{
+  "errors": {
+    "generic": "Error: {error}",
+    "unknown_command": "Unknown command: {command}\n\n{help}",
+    "invalid_timeout": "Invalid timeout. Use --timeout <seconds>.",
+    "profile_name_missing": "Please provide the profile name.",
+    "profile_name_invalid": "Invalid profile name: do not use the characters \\ / : * ? \" < > |",
+    "profile_not_found": "Profile '{name}' not found in {path}",
+    "profile_invalid": "Invalid profile: {error}",
+    "resolution_invalid": "Invalid resolution: '{raw}'. Use the WIDTHxHEIGHT format (e.g., 1920x1080).",
+    "resolution_width_invalid": "Invalid width in resolution '{raw}'.",
+    "resolution_height_invalid": "Invalid height in resolution '{raw}'.",
+    "resolution_zero": "The resolution cannot have zero width or height."
+  },
+  "save": {
+    "success": "Profile '{name}' saved with {count} icons ({width}x{height})."
+  },
+  "save_res": {
+    "success": "Profile '{name}' updated: {count} icons at resolution {resolution}."
+  },
+  "profile_update": {
+    "not_found": "Profile '{name}' not found. Use 'save' to create it.",
+    "success": "Profile '{name}' updated with {count} icons ({width}x{height})."
+  },
+  "restore": {
+    "success": "Profile '{name}' restored: {moved} of {count} icons moved."
+  },
+  "list": {
+    "empty": "No saved profiles.",
+    "some": "Saved profiles:\n{list}"
+  },
+  "startup": {
+    "missing_profile": "Please provide the profile name: startup on <profile>",
+    "warn_profile_missing": "Warning: profile '{name}' does not exist yet; create it with 'save'.",
+    "usage": "Usage: startup [on <profile> | off | status]",
+    "error_open_key": "Error opening the Registry key: {error}",
+    "error_write": "Error writing to the Registry: {error}",
+    "enable_success": "Automatic startup enabled for profile '{profile}'",
+    "already_disabled": "Automatic startup was already disabled.",
+    "error_remove": "Error removing the Registry value: {error}",
+    "disabled": "Automatic startup disabled.",
+    "status_disabled": "Automatic startup: disabled.",
+    "status_enabled": "Automatic startup: enabled"
+  },
+  "wait_drive": {
+    "missing_profile": "Please provide the profile name: wait-drive on <profile>",
+    "warn_profile_missing": "Warning: profile '{name}' does not exist yet; create it with 'save'.",
+    "usage": "Usage: wait-drive [on <profile> [--timeout <seconds>] | off | status]",
+    "disabled_error": "Wait-drive is disabled.",
+    "run_waiting": "Waiting for {process}{timeout}...",
+    "run_timeout_suffix": " (timeout of {seconds}s)",
+    "run_no_timeout_suffix": " (no timeout)",
+    "run_detected": "Google Drive detected after {seconds}s. Restoring profile '{name}'...",
+    "run_restored": "Profile '{name}' restored: {moved} of {count} icons moved.",
+    "error_open_key": "Error opening the Registry key: {error}",
+    "error_create_key": "Error creating the Registry key: {error}",
+    "error_write": "Error writing to the Registry: {error}",
+    "enable_success": "Wait-drive enabled for profile '{profile}' (timeout: {timeout}).",
+    "disabled": "Wait-drive disabled.",
+    "status_disabled": "Wait-drive: disabled.",
+    "status_enabled": "Wait-drive: enabled. Profile: '{profile}', timeout: {timeout}.",
+    "profile_undefined": "(not set)",
+    "timeout_on": "{seconds}s",
+    "timeout_off": "no timeout"
+  },
+  "process_watcher": {
+    "timeout": "Timed out waiting for process '{process}' ({seconds}s)."
+  },
+  "lang": {
+    "current": "Current language: {lang}\n \nOther languages: \nAmerican Portuguese: pt-br\nRussian: ru\nChinese: zh\nSpanish: es",
+    "not_found": "Language '{lang}' not found",
+    "changed": "Language changed to '{lang}'."
+  },
+  "help": {
+    "text": "DesktopORZ — desktop icon layout manager\n\nUsage:\n  save <profile>                    Saves the current layout to the profile\n  save-res <profile> [<W>x<H>]      Saves the layout for a specific resolution\n  profile-update <profile>          Updates the profile's main layout\n  restore <profile>                 Restores the profile's layout\n  list                              Lists saved profiles\n  startup [on <profile>|off|status]  Manages automatic startup\n  wait-drive [on <profile> [--timeout <s>]|off|status]  Waits for Google Drive at startup\n  lang [<code>]                     Shows or changes the language (e.g., lang en)\n  help                              Shows this help"
+  }
+}

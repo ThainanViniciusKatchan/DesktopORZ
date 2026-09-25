@@ -177,7 +177,7 @@ fn run(args: &[String]) -> Result<String, String> {
 }
 
 /// Comando `lang [sigla]`: sem argumento mostra o idioma atual; com
-/// argumento valida se `<sigla>.json` existe ao lado do exe e o salva.
+/// argumento valida se `langs/<sigla>.json` existe ao lado do exe e o salva.
 fn run_lang(args: &[String]) -> Result<String, String> {
     match args
         .get(1)
@@ -186,8 +186,8 @@ fn run_lang(args: &[String]) -> Result<String, String> {
     {
         None => Ok(t_args("lang.current", &[("lang", &config::get_language())])),
         Some(sigla) => {
-            let path = exe_dir().join(format!("{sigla}.json"));
-            if !path.exists() {
+            let path = exe_dir().join("langs").join(format!("{sigla}.json"));
+            if !path.exists() && i18n::embedded_language(sigla).is_none() {
                 return Err(t_args("lang.not_found", &[("lang", sigla)]));
             }
             config::set_language(sigla)?;
