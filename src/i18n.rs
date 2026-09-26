@@ -11,18 +11,18 @@ static TRANSLATIONS: OnceLock<HashMap<String, String>> = OnceLock::new();
 /// Fallback embutido mínimo, usado apenas se o arquivo de idioma não existir.
 fn builtin_fallback() -> HashMap<String, String> {
     HashMap::from([
-        ("errors.generic".to_string(), "Erro: {error}".to_string()),
+        ("errors.generic".to_string(), "Error: {error}".to_string()),
         (
             "lang.current".to_string(),
-            "Idioma atual: {lang}".to_string(),
+            "Current language: {lang}".to_string(),
         ),
         (
             "lang.changed".to_string(),
-            "Idioma alterado para '{lang}'.".to_string(),
+            "Language changed to '{lang}'.".to_string(),
         ),
         (
             "lang.not_found".to_string(),
-            "Arquivo de idioma '{lang}.json' não encontrado na pasta 'langs' ao lado do executável.".to_string(),
+            "Language file '{lang}.json' not found in the 'langs' folder next to the executable.".to_string(),
         ),
     ])
 }

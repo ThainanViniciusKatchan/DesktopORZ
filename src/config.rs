@@ -5,11 +5,11 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 fn default_language() -> String {
-    "pt-br".to_string()
+    "en-us".to_string()
 }
 
 /// Configuração persistente do CLI, salva em `config.json` ao lado do exe.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CliConfig {
     #[serde(default = "default_language")]
     pub language: String,
@@ -17,6 +17,16 @@ pub struct CliConfig {
     pub startup: Option<StartupMirror>,
     #[serde(default)]
     pub wait_drive: Option<WaitDriveMirror>,
+}
+
+impl Default for CliConfig {
+    fn default() -> Self {
+        Self {
+            language: default_language(),
+            startup: None,
+            wait_drive: None,
+        }
+    }
 }
 
 /// Espelho da configuração de inicialização com o sistema (source of truth: registro).
@@ -44,7 +54,7 @@ pub fn config_path() -> Result<PathBuf, String> {
     let exe = env::current_exe().map_err(|e| format!("{e}"))?;
     let dir = exe
         .parent()
-        .ok_or_else(|| "Não foi possível determinar a pasta do executável.".to_string())?;
+        .ok_or_else(|| "Could not determine the executable's folder.".to_string())?;
     Ok(dir.join("config.json"))
 }
 

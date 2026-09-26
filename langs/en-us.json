@@ -67,7 +67,7 @@
     "timeout": "Timed out waiting for process '{process}' ({seconds}s)."
   },
   "lang": {
-    "current": "Current language: {lang}\n \nOther languages: \nAmerican Portuguese: pt-br\nRussian: ru\nChinese: zh\nSpanish: es",
+    "current": "Current language: {lang}\n \nOther languages: \nBrazilian Portuguese: pt-br\nRussian: ru\nChinese: zh\nSpanish: es",
     "not_found": "Language '{lang}' not found",
     "changed": "Language changed to '{lang}'."
   },
